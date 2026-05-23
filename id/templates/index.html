@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音链接解析器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 16px;
+            color: #333;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-copy {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-copy.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 抖音链接解析器</h1>
+        <p class="subtitle">输入抖音视频链接，一键获取视频ID和用户ID</p>
+
+        <div class="input-section">
+            <label for="urlInput">粘贴抖音链接（支持混合文本）</label>
+            <textarea id="urlInput" placeholder="例如：https://v.douyin.com/YK-7HHPOo8k/  foq:/ r@e.BG :1pm 07/02"></textarea>
+        </div>
+
+        <button id="parseBtn" onclick="parseUrl()">解析链接</button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在解析中...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result-section" id="resultSection">
+            <h2 class="result-title">✅ 解析结果</h2>
+
+            <div class="result-item">
+                <div class="result-label">完整链接</div>
+                <div class="result-value" id="fullUrl"></div>
+                <button class="copy-btn" onclick="copyText('fullUrl')">复制</button>
+            </div>
+
+            <div class="result-item" id="shortCodeItem" style="display:none;">
+                <div class="result-label">短链接码</div>
+                <div class="result-value" id="shortCode"></div>
+                <button class="copy-btn" onclick="copyText('shortCode')">复制</button>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">视频ID</div>
+                <div class="result-value" id="videoId"></div>
+                <button class="copy-btn" onclick="copyText('videoId')">复制</button>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">用户ID</div>
+                <div class="result-value" id="userId"></div>
+                <button class="copy-btn" onclick="copyText('userId')">复制</button>
+            </div>
+
+            <div class="result-item" id="secUserIdItem" style="display:none;">
+                <div class="result-label">加密用户ID</div>
+                <div class="result-value" id="secUserId"></div>
+                <button class="copy-btn" onclick="copyText('secUserId')">复制</button>
+            </div>
+
+            <div class="result-item" id="noteItem" style="display:none;">
+                <div class="result-label">提示</div>
+                <div class="result-value" id="note"></div>
+            </div>
+        </div>
+
+        <div class="success-copy" id="successCopy">✅ 复制成功！</div>
+    </div>
+
+    <script>
+        async function parseUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('请输入抖音链接');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('resultSection');
+            const error = document.getElementById('error');
+            const parseBtn = document.getElementById('parseBtn');
+
+            loading.classList.add('show');
+            resultSection.classList.remove('show');
+            error.classList.remove('show');
+            parseBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data.result);
+                } else {
+                    showError(data.message || '解析失败');
+                }
+            } catch (err) {
+                showError('网络错误，请确保后端服务已启动');
+            } finally {
+                loading.classList.remove('show');
+                parseBtn.disabled = false;
+            }
+        }
+
+        function displayResult(result) {
+            document.getElementById('fullUrl').textContent = result.full_url || '-';
+            document.getElementById('videoId').textContent = result.video_id || '未找到';
+            document.getElementById('userId').textContent = result.user_id || '未找到';
+
+            const shortCodeItem = document.getElementById('shortCodeItem');
+            if (result.short_code) {
+                document.getElementById('shortCode').textContent = result.short_code;
+                shortCodeItem.style.display = 'block';
+            } else {
+                shortCodeItem.style.display = 'none';
+            }
+
+            const secUserIdItem = document.getElementById('secUserIdItem');
+            if (result.sec_user_id) {
+                document.getElementById('secUserId').textContent = result.sec_user_id;
+                secUserIdItem.style.display = 'block';
+            } else {
+                secUserIdItem.style.display = 'none';
+            }
+
+            const noteItem = document.getElementById('noteItem');
+            if (result.note) {
+                document.getElementById('note').textContent = result.note;
+                noteItem.style.display = 'block';
+            } else {
+                noteItem.style.display = 'none';
+            }
+
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        function copyText(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const successCopy = document.getElementById('successCopy');
+                successCopy.classList.add('show');
+                setTimeout(() => {
+                    successCopy.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        document.getElementById('urlInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                parseUrl();
+            }
+        });
+    </script>
+</body>
+</html>
